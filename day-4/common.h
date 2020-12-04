@@ -26,7 +26,7 @@ struct field {
 
 struct passport {
 	struct field *fields;
-	unsigned char present;
+	enum field_flag present;
 	struct passport *next;
 };
 

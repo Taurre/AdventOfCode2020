@@ -7,26 +7,15 @@ int
 main(void)
 {
 	struct passport *passport = passport_read("input.txt");
-	unsigned n = 1;
+	unsigned valid = 0;
 
 	while (passport != NULL) {
-		struct field *field = passport->fields;
-		printf("Passport #%u\n", n);	
-
-		while (field != NULL) {
-			printf("\t%s = %s\n", field->name, field->value);
-			field = field->next;
-		}
-
 		if ((passport->present & PASSPORT_VALID) == PASSPORT_VALID)
-			printf("This passport is valid\n");
-		else
-			printf("This passport is not valid\n");
+			++valid;
 
-		putchar('\n');
 		passport = passport->next;
-		++n;
 	}
 
+	printf("%u passport(s) are valid\n", valid);
 	return 0;
 }

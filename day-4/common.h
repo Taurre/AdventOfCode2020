@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-enum {
+enum field_flag {
 	FIELD_BYR = 1 << 0,
 	FIELD_IYR = 1 << 1,
 	FIELD_EYR = 1 << 2,
@@ -31,7 +31,13 @@ struct passport {
 };
 
 void panic(char const *);
-struct passport *passport_read(char const *);
-int passport_field(char const *);
+bool is_between(char const *, int, int);
+bool is_height(char const *);
+bool is_hex_color(char const *);
+bool is_eye_color(char const *);
+bool is_pid(char const *);
+struct passport *passport_read(char const *, bool);
+enum field_flag field_check(enum field_flag, char const *);
+enum field_flag passport_field(char const *);
 
 #endif /* COMMON_H */

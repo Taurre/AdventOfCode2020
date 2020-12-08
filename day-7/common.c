@@ -1,8 +1,7 @@
 #include <assert.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,133 +22,120 @@ fatal(char const *s)
 
 
 uint64_t
-how_many_bags_contain(struct bag *bag, char const *description)
+how_many_bag_contain(struct bag *bag, char const *color)
 {
-	uint64_t n = 0;
-	struct bag *current = bag;
-	struct bag *
+	assert(bag != NULL);
+	assert(color != NULL);
 
-	while (current != NULL) {
-		struct bag *inside = current->inside;
+	struct bag *list = bag;
+	uint64_t n = 0;
+
+	while (list != NULL) {
+		struct bag *inside = list->inside;
+
+		if (list->visited)
+			goto next;
 
 		while (inside != NULL) {
-			if (strcmp(description, inside->name) == 0) {
+			if (strcmp(inside->color, color) == 0) {
 				++n;
-				n += how_many_bags_contain(bag, current->name);
+				list->visited = true;
+				n += how_many_bag_contain(bag, list->color);
 				break;
 			}
 
 			inside = inside->next;
-		} 
+		}
 
-		current = current->next;
+	next:
+		list = list->next;
 	}
 
 	return n;
 }
 
 
-char *
-bag_name(char const *description)
+uint64_t
+how_many_bag_inside(struct bag *bag, char const *color)
 {
-	assert(description != NULL);
+	assert(bag != NULL);
+	assert(color != NULL);
 
-	char *end = strstr(description, "bag");
+	struct bag *list = bag;
+	uint64_t n = 0;
 
-	if (end == NULL)
-		fatal("bag_name");
-	if (end > description && end[-1] == ' ')
-		--end;
+	while (list != NULL) {
+		if (strcmp(list->color, color) == 0) {
+			struct bag *inside = list->inside;
 
-	char *name = malloc(end - description);
+			while (inside != NULL) {
+				n += inside->count;
+				n += how_many_bag_inside(bag, inside->color) * inside->count;
+				inside = inside->next;
+			}
 
-	if (name == NULL)
-		fatal("malloc");
+			break;
+		}
 
-	ptrdiff_t i;
-
-	for (i = 0; i < end - description; ++i)
-		name[i] = description[i];
-
-	name[i] = '\0';
-	return name;
-}
-
-
-struct bag *
-bag_inside(char const *description)
-{
-	assert(description != NULL);
-
-	if (strstr(description, "contain") != NULL)
-		return bag_inside(strstr(description, "contain") + 7 + 1);
-	if (strncmp(description, "no other bag", 12) == 0)
-		return NULL;
-
-	uint8_t n;
-	int len;
-
-	if (sscanf(description, "%hhd%n", &n, &len) != 1)
-		fatal("sscanf");
-
-	description += len + 1;
-	struct bag *bag = bag_create(description, n, false);
-	char const *next = strchr(description, ',');
-
-	if (next != NULL)
-		bag->next = bag_inside(next + 2);
-	else
-		bag->next = NULL;
-
-	return bag;
-}
-
-
-struct bag *
-bag_create(char const *description, uint8_t n, bool inside)
-{
-	assert(description != NULL);
-
-	struct bag *bag = malloc(sizeof *bag);
-
-	if (bag == NULL)
-		fatal("malloc");
-
-	bag->name = bag_name(description);
-	bag->n = n;
-	bag->next = NULL;
-
-	if (inside)
-		bag->inside = bag_inside(description);
-	else
-		bag->inside = NULL;
-
-	return bag;		
-}
-
-
-struct bag *
-bag_read_list(char const *filename)
-{
-	assert(filename != NULL);
-
-	FILE *fp = fopen(filename, "r");
-
-	if (fp == NULL)
-		fatal("fopen");
-
-	struct bag *list;
-	struct bag **current = &list;
-	char buf[255];
-
-	while (fgets(buf, sizeof buf, fp) != NULL) {
-		struct bag *new = bag_create(buf, 0, true);
-		*current = new;
-		current = &new->next;
+		list = list->next;
 	}
 
-	if (ferror(fp))
-		fatal("fgets");
+	return n;
+}
 
-	return list;
+
+struct bag *
+bag_create(struct color *color)
+{
+	assert(color != NULL);
+
+	struct bag *self = malloc(sizeof *self);
+
+	if (self == NULL)
+		fatal("malloc");
+
+	self->color = malloc(strlen(color->color) + 1);
+
+	if (self->color == NULL)
+		fatal("malloc");
+
+	strcpy(self->color, color->color);
+	self->count = color->count;
+	self->inside = NULL;
+	self->next = NULL;
+	self->visited = false;
+	return self;
+}
+
+
+bool
+read_color(struct color *color)
+{
+	assert(color != NULL);
+
+	enum state state;
+	*color = (struct color) { .color = { 0 } };
+
+	while ((state = yylex()) > 0) {
+		if (state == ST_NEXT) {
+			if (!color->color[0])
+				continue;
+			else
+				return true;
+		}
+		else if (state == ST_NUMBER) {
+			if (sscanf(yytext, "%" SCNu8, &color->count) != 1)
+				fatal("sscanf");
+		}
+		else if (state == ST_COLOR) {
+			if (!color->color[0])
+				strcpy(color->color, yytext);
+			else {
+				strcat(color->color, " ");
+				strcat(color->color, yytext);
+			}
+		}
+	}
+
+	return false;
 }

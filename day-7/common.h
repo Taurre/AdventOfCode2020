@@ -1,18 +1,32 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-struct bag {
-	char *name;
-	uint8_t n;
-	struct bag *inside;
-	struct bag *next;
+enum state {
+	ST_COLOR = 1,
+	ST_NUMBER,
+	ST_NEXT
 };
 
+struct color {
+	char color[32];
+	uint8_t count;
+};
+
+struct bag {
+	char *color;
+	uint8_t count;
+	struct bag *inside;
+	struct bag *next;
+	bool visited;
+};
+
+int yylex(void);
+uint64_t how_many_bag_contain(struct bag *, char const *);
+uint64_t how_many_bag_inside(struct bag *, char const *);
+struct bag *bag_create(struct color *);
+bool read_color(struct color *);
 void fatal(char const *);
-uint64_t how_many_bags_contain(struct bag *, char const *);
-char *bag_name(char const *);
-struct bag *bag_inside(char const *);
-struct bag *bag_create(char const *, uint8_t, bool);
-struct bag *bag_read_list(char const *);
+
+char *yytext;
 
 #endif /* COMMON_H */

@@ -20,27 +20,35 @@ fatal(char const *s)
 }
 
 
-uint32_t
-group_count_questions(FILE *fp)
+int32_t
+group_count_questions(FILE *fp, bool everyone)
 {
-	bool questions[255] = { 0 };
+	unsigned char questions[255] = { 0 };
 	char buf[255];
-	uint32_t nb = 0;
+	uint32_t members;
 
-	while (fgets(buf, sizeof buf, fp) != NULL) {
+	for (members = 0; fgets(buf, sizeof buf, fp) != NULL; ++members) {
 		if (buf[0] == '\n')
 			break;
 
 		for (char *s = buf; *s != '\n' && *s != '\0'; ++s)
-			if (questions[*s] == false) {
-				questions[*s] = true;
-				++nb;
-			}
-
+			++questions[*s];
 	}
 
 	if (ferror(fp))
 		fatal("fgets");
 
-	return nb;
+	uint32_t nb = 0;
+
+	if (!everyone) {
+		for (uint32_t i = 0; i < sizeof questions; ++i)
+			if (questions[i])
+				++nb;
+	} else {
+		for (uint32_t i = 0; i < sizeof questions; ++i)
+			if (questions[i] == members)
+				++nb;
+	}
+
+	return (members) ? nb : -1;
 }

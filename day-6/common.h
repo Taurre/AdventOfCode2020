@@ -2,6 +2,6 @@
 #define COMMON_H
 
 void fatal(char const *);
-uint32_t group_count_questions(FILE *);
+int32_t group_count_questions(FILE *, bool);
 
 #endif /* COMMON_H */

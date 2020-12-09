@@ -7,7 +7,6 @@
 
 #define PREAMBLE 25U
 
-
 struct array {
 	uint64_t *data;
 	size_t len;

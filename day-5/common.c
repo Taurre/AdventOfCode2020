@@ -44,6 +44,8 @@ compute_row(char const *s)
 int
 compute_col(char const *s)
 {
+	assert(s != NULL);
+
 	int max = 4;
 	struct range col = { .min = 0, .max = 7 };
 

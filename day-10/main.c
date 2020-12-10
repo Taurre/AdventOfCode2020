@@ -105,27 +105,19 @@ joltage_next(struct array *array, uint64_t n)
 
 
 static uint64_t
-how_many_ways(uint64_t from, uint64_t to, struct array *joltage)
+how_many_ways(struct array *array, unsigned char (*matrix)[array->len], size_t current)
 {
-	assert(joltage != NULL);
-	struct array *next = joltage_next(joltage, from);
+	assert(matrix != NULL);
 	uint64_t n = 0;
 
-	if (!next->len) {
-		if (from == to - 3)
-			n = 1;
+	for (size_t i = 0; i < array->len; ++i)
+		if (matrix[current][i]) {
+			if (i == 0)
+				return 1;
 
-		goto end;
-	}
+			n += how_many_ways(array, matrix, i);
+		}
 
-	for (size_t i = 0; i < next->len; ++i) {
-		uint64_t m = how_many_ways(next->data[i], to, joltage);
-
-		if (m)
-			n += m;
-	}
-end:
-	free(next);
 	return n;
 }
 
@@ -161,5 +153,32 @@ main(void)
 
 	++diff3;
 	printf("Part 1: %" PRIu64 "\n", diff1 * diff3);
+
+	array_add(&array, 0);
+	array_add(&array, array_max(&array) + 3);
+	qsort(array.data, array.len, sizeof *array.data, &compare);
+	unsigned char (*matrix)[array.len] = calloc(sizeof *matrix, array.len);
+
+	n = 0;
+
+	for (size_t i = 0; i < array.len; ++i)
+		for (size_t j = 0; j < array.len; ++j) {
+			if (array.data[i] == array.data[j])
+				continue;
+			if (array.data[j] - array.data[i] > 3)
+				continue;
+
+			matrix[i][j] = 1;
+			++n;
+		}
+
+	for (size_t i = 0; i < array.len; ++i) {
+		for (size_t j = 0; j < array.len; ++j)
+			printf("%d ", matrix[i][j]);
+
+		putchar('\n');
+	}
+
+	printf("%" PRIu64 "\n", n);
 	return 0;
 }

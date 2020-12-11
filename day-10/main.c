@@ -91,31 +91,6 @@ array_max(struct array *self)
 }
 
 
-static struct array *
-joltage_next(struct array *array, uint64_t n)
-{
-	assert(array != NULL);
-
-	struct array *next = malloc(sizeof *next);
-
-	if (next == NULL)
-		fatal("malloc");
-
-	*next = (struct array) { .data = NULL };
-
-	for (size_t i = 0; i < array->len; ++i) {
-		if (array->data[i] < n + 1)
-			continue;
-		if (array->data[i] > n + 3)
-			break;
-
-		array_add(next, array->data[i]);
-	}
-
-	return next;
-}
-
-
 static uint64_t
 how_many_ways(struct array *array, unsigned char (*matrix)[array->len], size_t current)
 {

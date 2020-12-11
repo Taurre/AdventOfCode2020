@@ -38,6 +38,26 @@ compare(void const *p, void const *q)
 
 
 static void
+array_resize(struct array *self, size_t newsize)
+{
+	assert(self != NULL);
+	assert(newsize != 0);
+	assert(newsize >= self->cap);
+
+	if (SIZE_MAX / sizeof *self->data < newsize)
+		fatal("Integer overflow");
+
+	void *tmp = realloc(self->data, newsize * sizeof *self->data);
+
+	if (tmp == NULL)
+		fatal("realloc");
+
+	self->data = tmp;
+	self->cap = newsize;
+}
+
+
+static void
 array_add(struct array *self, uint64_t n)
 {
 	assert(self != NULL);
@@ -48,15 +68,7 @@ array_add(struct array *self, uint64_t n)
 		else
 			self->cap <<= 2;
 
-		if (!self->cap || SIZE_MAX / sizeof *self->data < self->cap)
-			fatal("Integer overflow");
-
-		void *tmp = realloc(self->data, self->cap * sizeof *self->data);
-
-		if (tmp == NULL)
-			fatal("realloc");
-
-		self->data = tmp;
+		array_resize(self, self->cap);
 	}
 
 	self->data[self->len++] = n;
@@ -157,28 +169,19 @@ main(void)
 	array_add(&array, 0);
 	array_add(&array, array_max(&array) + 3);
 	qsort(array.data, array.len, sizeof *array.data, &compare);
-	unsigned char (*matrix)[array.len] = calloc(sizeof *matrix, array.len);
 
-	n = 0;
+	uint64_t *ways = calloc(array_max(&array) + 1, sizeof *ways);
+	ways[0] = 1;
 
-	for (size_t i = 0; i < array.len; ++i)
-		for (size_t j = 0; j < array.len; ++j) {
-			if (array.data[i] == array.data[j])
-				continue;
-			if (array.data[j] - array.data[i] > 3)
-				continue;
+	for (size_t i = 1; i < array.len; ++i)
+		for (size_t j = 1; j < 4; ++j) {
+			if (array.data[i] < j)
+				break;
 
-			matrix[i][j] = 1;
-			++n;
+			if (ways[array.data[i] - j])
+				ways[array.data[i]] += ways[array.data[i] - j];
 		}
 
-	for (size_t i = 0; i < array.len; ++i) {
-		for (size_t j = 0; j < array.len; ++j)
-			printf("%d ", matrix[i][j]);
-
-		putchar('\n');
-	}
-
-	printf("%" PRIu64 "\n", n);
+	printf("Part 2: %" PRIu64 "\n", ways[array_max(&array)]);
 	return 0;
 }

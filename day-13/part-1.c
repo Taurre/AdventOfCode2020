@@ -43,10 +43,15 @@ main(void)
 
 		while (c = getchar(), c != EOF && c != '\n')
 			if (isdigit(c)) {
-				ungetc(c, stdin);
+				if (ungetc(c, stdin) == EOF)
+					fatal("ungetc");
+
 				break;
 			}
 	}
+
+	if (ferror(stdin))
+		fatal("scanf");
 
 	printf("Part 1: %ld\n", bus.id * bus.wait);
 	return 0;

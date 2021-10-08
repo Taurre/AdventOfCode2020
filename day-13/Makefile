@@ -1,4 +1,4 @@
-all: part-1
+all: part-1 part-2
 
 .PHONY: clean
 clean:
